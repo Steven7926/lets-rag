@@ -1,0 +1,63 @@
+services:
+  ollama:
+    build: .
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_KEEP_ALIVE: "24h"
+      OLLAMA_MODELS: "gemma3:4b nomic-embed-text"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:11434/api/tags"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    depends_on:
+      ollama:
+        condition: service_healthy
+    ports:
+      - "${OPEN_WEBUI_PORT:-3000}:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://rag-api:8008
+      - WEBUI_SECRET_KEY=please-change-me
+      - WEBUI_AUTH=False
+    volumes:
+      - open-webui:/app/backend/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  rag-api:
+    image: rag-api:latest
+    restart: always
+    container_name: rag-api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8008:8008"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    # env_file:
+    #   - ./api/.env
+    environment:
+       - CHOKIDAR_USEPOLLING=true
+       - WATCHFILES_FORCE_POLLING=true
+
+
+volumes:
+  ollama-models: {}
+  open-webui: {}

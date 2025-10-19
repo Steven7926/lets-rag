@@ -1,0 +1,23 @@
+# Ignore local editor settings
+.vscode
+
+# Ignore Git repository files
+.git*
+
+# Ignore build and test files/folders
+dist
+build
+coverage
+report.xml
+
+# Ignore ESLint, Prettier, and other configuration files that aren't needed in the final image
+.eslint*
+.prettier*
+.editorconfig
+.DS_Store
+
+# Ignore Dockerfiles, Makefiles, etc.
+Dockerfile*
+Makefile
+
+**/__pycache__/
